@@ -18,6 +18,36 @@ def create_table():
     connection.commit()
     connection.close()
 
+def save_observation(
+        timestamp,
+        source_ip,
+        destination_ip,
+        protocol,
+        source_port,
+        destination_port,
+        packet_size,
+        tcp_flags,
+):
+    connection = connect_database()
+    cursor = connection.cursor()
 
+
+    cursor.execute(
+    "INSERT INTO network_observations (timestamp, source_ip, destination_ip, protocol, source_port, "
+    "destination_port, packet_size, tcp_flags) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    (
+        timestamp,
+        source_ip,
+        destination_ip,
+        protocol,
+        source_port,
+        destination_port,
+        packet_size,
+        tcp_flags,
+    )
+)
+
+    connection.commit()
+    connection.close()
 
     
