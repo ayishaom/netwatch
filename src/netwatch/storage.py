@@ -50,4 +50,3 @@ def save_observation(
     connection.commit()
     connection.close()
 
-    

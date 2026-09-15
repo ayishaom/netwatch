@@ -12,14 +12,13 @@ def parse_packets(packet):
     source_ip = ip_layer.src
     destination_ip = ip_layer.dst
     packet_size = len(packet)
-    timestamp = packet.time 
+    timestamp = float(packet.time)
     
     if packet.haslayer(TCP):
         protocol = "TCP"
         source_port = packet[TCP].sport
         destination_port = packet[TCP].dport
-        tcp_flag = packet[TCP].flags
-
+        tcp_flag = str(packet[TCP].flags)
     elif packet.haslayer(UDP):
         protocol = "UDP"
         source_port = packet[UDP].sport

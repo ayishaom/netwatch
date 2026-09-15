@@ -1,5 +1,8 @@
-from scapy.all import rdpcap, IP, TCP, UDP
+from scapy.all import rdpcap
+from netwatch.parser import parse_packets
+from netwatch.storage import create_table, save_observation
 import os
+
 
 filename = "data/sample.pcapng"
 
@@ -17,11 +20,15 @@ def read_pcapng(filename):
     
     return packets
 
+create_table()
 packets= read_pcapng(filename)
 if packets is not None: 
-    packet = packets[2]
+    for packet in packets[:5]:
+        parsed = parse_packets(packet)
+
+        if parsed is not None:
+            save_observation(*parsed)
 
 
-    print(packet.haslayer(TCP))
-    print(packet.haslayer(IP))
-    print(packet.haslayer(UDP))
+ 
+
