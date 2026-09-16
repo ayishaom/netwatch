@@ -1,6 +1,6 @@
 from scapy.all import rdpcap
 from netwatch.parser import parse_packets
-from netwatch.storage import create_table, save_observation
+from netwatch.storage import create_table, save_observation, connect_database
 import os
 
 
@@ -21,13 +21,18 @@ def read_pcapng(filename):
     return packets
 
 create_table()
+connection = connect_database()
 packets= read_pcapng(filename)
 if packets is not None: 
-    for packet in packets[:5]:
+    for packet in packets:
         parsed = parse_packets(packet)
 
         if parsed is not None:
-            save_observation(*parsed)
+            save_observation(connection, *parsed)
+
+connection.commit()
+connection.close()
+
 
 
  

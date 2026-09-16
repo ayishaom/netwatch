@@ -19,6 +19,7 @@ def create_table():
     connection.close()
 
 def save_observation(
+        connection,
         timestamp,
         source_ip,
         destination_ip,
@@ -28,7 +29,6 @@ def save_observation(
         packet_size,
         tcp_flags,
 ):
-    connection = connect_database()
     cursor = connection.cursor()
 
 
@@ -47,6 +47,6 @@ def save_observation(
     )
 )
 
-    connection.commit()
-    connection.close()
+
+
 
