@@ -17,4 +17,17 @@ def get_protocol_stats():
 
     return results
 
+def get_top_source_hosts(limit):
+    connection = connect_database()
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT source_ip," \
+    " COUNT(*) AS packet_count FROM network_observations " \
+    "GROUP BY source_ip ORDER BY packet_count DESC LIMIT ?", (limit,))
+
+    results = cursor.fetchall()
+
+    connection.close()
+
+    return results
 
