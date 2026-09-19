@@ -31,3 +31,18 @@ def get_top_source_hosts(limit):
 
     return results
 
+def get_top_sources_by_bytes(limit):
+    connection = connect_database()
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT source_ip, SUM(packet_size) " \
+    "AS total_bytes FROM network_observations" \
+    " GROUP BY source_ip ORDER BY total_bytes DESC LIMIT ?",  (limit, ))
+
+    results = cursor.fetchall()
+
+    connection.close()
+
+    return results 
+
+
