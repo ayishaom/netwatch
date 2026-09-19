@@ -46,3 +46,22 @@ def get_top_sources_by_bytes(limit):
     return results 
 
 
+def get_network_flows(limit):
+    connection = connect_database()
+    cursor = connection.cursor()
+    
+    cursor.execute("SELECT source_ip, destination_ip, source_port," \
+    " destination_port, protocol, COUNT(*) " \
+    "AS packet_count, SUM(packet_size) " \
+    "AS total_bytes," \
+    "MIN(timestamp) AS start_time, " \
+    "MAX(timestamp) AS end_time, " \
+    "MAX(timestamp) - MIN(timestamp) AS duration " \
+    "FROM network_observations " \
+    "GROUP BY source_ip, destination_ip, source_port, " \
+    "destination_port, protocol LIMIT ? ", (limit, ))
+
+
+    results = cursor.fetchall()
+    connection.close()
+    return results
