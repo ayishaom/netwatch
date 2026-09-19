@@ -59,9 +59,10 @@ def get_network_flows(limit):
     "MAX(timestamp) - MIN(timestamp) AS duration " \
     "FROM network_observations " \
     "GROUP BY source_ip, destination_ip, source_port, " \
-    "destination_port, protocol LIMIT ? ", (limit, ))
+    "destination_port, protocol ORDER BY total_bytes DESC LIMIT ? ", (limit, ))
 
 
     results = cursor.fetchall()
     connection.close()
     return results
+
