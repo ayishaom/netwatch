@@ -66,3 +66,43 @@ def get_network_flows(limit):
     connection.close()
     return results
 
+def get_traffic_summary():
+    connection = connect_database()
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT COUNT(*) AS packet_count, " \
+    "SUM(packet_size) AS total_bytes, " \
+    "COUNT(DISTINCT source_ip) AS unique_sources, " \
+    "COUNT(DISTINCT destination_ip) AS unique_destinations " \
+    "FROM network_observations")
+
+    results = cursor.fetchone()
+    connection.close()
+    return results
+
+
+
+def get_flow_count():
+    connection = connect_database()
+    cursor = connection.cursor()
+    
+    cursor.execute(""" SELECT COUNT(*)
+FROM (
+    SELECT
+        source_ip,
+        destination_ip,
+        source_port,
+        destination_port,
+        protocol
+    FROM network_observations
+    GROUP BY
+        source_ip,
+        destination_ip,
+        source_port,
+        destination_port,
+        protocol
+);""")
+
+    results = cursor.fetchone()
+    connection.close()
+    return results[0]
