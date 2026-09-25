@@ -68,13 +68,41 @@ def detect_high_volume_flow(byte_threshold):
             destination_port,
             protocol
         HAVING total_bytes >= ?;
-           """, (byte_threshold,))
+        """, (byte_threshold,))
 
     results = cursor.fetchall()
 
     connection.close()
 
     return results 
+
+
+def detect_excessive_syn(threshold):
+    connection = connect_database()
+    cursor = connection.cursor()
+
+    cursor.execute(""" 
+        SELECT 
+            source_ip,
+            destination_ip,
+            COUNT(*) AS syn_count
+        FROM network_observations
+        WHERE protocol = 'TCP' 
+             AND tcp_flags = 'S'
+        GROUP BY
+            source_ip,
+            destination_ip
+        HAVING syn_count > ?
+        ORDER BY 
+            syn_count DESC,
+            source_ip ASC;
+            """, (threshold,))
+
+    results = cursor.fetchall()
+
+    connection.close()
+
+    return results
 
 
 if __name__ == "__main__":

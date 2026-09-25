@@ -43,6 +43,13 @@ def create_test_database(tmp_path):
                     (2.0, "10.0.0.70", "10.0.0.80", "TCP", 51000, 443, 400, "A"),
                     (3.0, "10.0.0.70", "10.0.0.80", "TCP", 51000, 443, 400, "A"),]
 
+    excessive_syn_packets = [
+                    (1.0, "10.0.0.90", "10.0.0.100", "TCP", 52000, 80, 60, "S"),
+                    (2.0, "10.0.0.90", "10.0.0.100", "TCP", 52000, 80, 60, "S"),
+                    (3.0, "10.0.0.90", "10.0.0.100", "TCP", 52000, 80, 60, "S"),
+                    (4.0, "10.0.0.90", "10.0.0.100", "TCP", 52000, 80, 60, "S"),
+                    (5.0, "10.0.0.90", "10.0.0.100", "TCP", 52000, 80, 60, "S") ]
+
     cursor.executemany("""
             INSERT INTO network_observations (
                 timestamp,
@@ -55,7 +62,7 @@ def create_test_database(tmp_path):
                 tcp_flags
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?);
-        """, scan_packets + sweep_packets + high_volume_packets)
+        """, scan_packets + sweep_packets + high_volume_packets + excessive_syn_packets)
 
 
     connection.commit()
@@ -109,7 +116,22 @@ def test_detect_high_volume_flow(tmp_path, monkeypatch):
             51000,
             443,
             "TCP",
-            1200,
-      
+            1200
         )
+    ]
+
+
+def test_detect_excessive_syn(tmp_path, monkeypatch):
+    db_path = create_test_database(tmp_path)
+
+    monkeypatch.setattr(
+        detector,
+        "connect_database",
+        lambda: sqlite3.connect(db_path)
+    )
+
+    result = detector.detect_excessive_syn(3)
+    assert result == [
+        ("10.0.0.50", "10.0.0.100", 5),
+        ("10.0.0.90", "10.0.0.100", 5)
     ]
