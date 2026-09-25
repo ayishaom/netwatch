@@ -23,13 +23,25 @@ def create_test_database(tmp_path):
         );
     """)
 
-    scan_packets = [(1.0, "10.0.0.50", "10.0.0.100", "TCP", 50000, 21, 60, "S"),
+    scan_packets = [
+                (1.0, "10.0.0.50", "10.0.0.100", "TCP", 50000, 21, 60, "S"),
                 (2.0, "10.0.0.50", "10.0.0.100", "TCP", 50000, 22, 60, "S"),
                 (3.0, "10.0.0.50", "10.0.0.100", "TCP", 50000, 23, 60, "S"),
                 (4.0, "10.0.0.50", "10.0.0.100", "TCP", 50000, 80, 60, "S"),
                 (5.0, "10.0.0.50", "10.0.0.100", "TCP", 50000, 443, 60, "S"),
-                
                 ]
+
+    sweep_packets = [
+                (1.0, "10.0.0.60", "10.0.0.100", "TCP", 50000, 443, 60, "S"),
+                (2.0, "10.0.0.60", "10.0.0.101", "TCP", 50000, 443, 60, "S"),
+                (3.0, "10.0.0.60", "10.0.0.102", "TCP", 50000, 443, 60, "S"),
+                (4.0, "10.0.0.60", "10.0.0.103", "TCP", 50000, 443, 60, "S"),
+                (5.0, "10.0.0.60", "10.0.0.105", "TCP", 50000, 443, 60, "S"),]
+
+    high_volume_packets =[
+                    (1.0, "10.0.0.70", "10.0.0.80", "TCP", 51000, 443, 400, "A"),
+                    (2.0, "10.0.0.70", "10.0.0.80", "TCP", 51000, 443, 400, "A"),
+                    (3.0, "10.0.0.70", "10.0.0.80", "TCP", 51000, 443, 400, "A"),]
 
     cursor.executemany("""
             INSERT INTO network_observations (
@@ -43,7 +55,7 @@ def create_test_database(tmp_path):
                 tcp_flags
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?);
-        """, scan_packets)
+        """, scan_packets + sweep_packets + high_volume_packets)
 
 
     connection.commit()
@@ -63,4 +75,41 @@ def test_detect_port_scan(tmp_path, monkeypatch):
     result = detector.detect_port_scan(3)
     assert result == [
         ("10.0.0.50", "10.0.0.100", 5)
+    ]
+
+def test_detect_host_sweep(tmp_path, monkeypatch):
+    db_path = create_test_database(tmp_path)
+
+    monkeypatch.setattr(
+        detector,
+        "connect_database",
+        lambda: sqlite3.connect(db_path)
+    )
+
+    result = detector.detect_host_sweep(3)
+    assert result == [
+        ("10.0.0.60", 5)
+    ]
+
+
+def test_detect_high_volume_flow(tmp_path, monkeypatch):
+    db_path = create_test_database(tmp_path)
+
+    monkeypatch.setattr(
+        detector,
+        "connect_database",
+        lambda: sqlite3.connect(db_path)
+    )
+
+    result = detector.detect_high_volume_flow(1000)
+    assert result == [
+        (
+            "10.0.0.70",
+            "10.0.0.80",
+            51000,
+            443,
+            "TCP",
+            1200,
+      
+        )
     ]
