@@ -77,29 +77,45 @@ def detect_high_volume_flow(byte_threshold):
     return results 
 
 
-def detect_excessive_syn(threshold):
+def detect_excessive_syn(threshold, window_seconds=10):
     connection = connect_database()
     cursor = connection.cursor()
 
-    cursor.execute(""" 
-        SELECT 
+    cursor.execute("""
+        SELECT
             source_ip,
             destination_ip,
-            COUNT(*) AS syn_count
-        FROM network_observations
-        WHERE protocol = 'TCP' 
-             AND tcp_flags = 'S'
+            MAX(syn_count) AS syn_count
+        FROM (
+            SELECT
+                a.source_ip AS source_ip,
+                a.destination_ip AS destination_ip,
+                COUNT(*) AS syn_count
+            FROM network_observations AS a
+            JOIN network_observations AS b
+                ON a.source_ip = b.source_ip
+                AND a.destination_ip = b.destination_ip
+                AND b.timestamp >= a.timestamp
+                AND b.timestamp <= a.timestamp + ?
+            WHERE a.protocol = 'TCP'
+                AND a.tcp_flags = 'S'
+                AND b.protocol = 'TCP'
+                AND b.tcp_flags = 'S'
+            GROUP BY
+                a.source_ip,
+                a.destination_ip,
+                a.timestamp
+        )
         GROUP BY
             source_ip,
             destination_ip
-        HAVING syn_count > ?
-        ORDER BY 
+        HAVING MAX(syn_count) > ?
+        ORDER BY
             syn_count DESC,
             source_ip ASC;
-            """, (threshold,))
+    """, (window_seconds, threshold))
 
     results = cursor.fetchall()
-
     connection.close()
 
     return results

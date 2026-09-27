@@ -130,8 +130,60 @@ def test_detect_excessive_syn(tmp_path, monkeypatch):
         lambda: sqlite3.connect(db_path)
     )
 
-    result = detector.detect_excessive_syn(3)
+    result = detector.detect_excessive_syn(
+        threshold=3,
+        window_seconds=10
+    )
     assert result == [
         ("10.0.0.50", "10.0.0.100", 5),
         ("10.0.0.90", "10.0.0.100", 5)
     ]
+
+
+def test_excessive_syn_respects_time_window(tmp_path, monkeypatch):
+    db_path = create_test_database(tmp_path)
+
+    connection = sqlite3.connect(db_path)
+    cursor = connection.cursor()
+
+    spaced_syn_packets = [
+        (100.0, "10.0.0.200", "10.0.0.201", "TCP", 53000, 80, 60, "S"),
+        (120.0, "10.0.0.200", "10.0.0.201", "TCP", 53000, 80, 60, "S"),
+        (140.0, "10.0.0.200", "10.0.0.201", "TCP", 53000, 80, 60, "S"),
+        (160.0, "10.0.0.200", "10.0.0.201", "TCP", 53000, 80, 60, "S"),
+        (180.0, "10.0.0.200", "10.0.0.201", "TCP", 53000, 80, 60, "S"),
+    ]
+
+    cursor.executemany("""
+        INSERT INTO network_observations (
+            timestamp,
+            source_ip,
+            destination_ip,
+            protocol,
+            source_port,
+            destination_port,
+            packet_size,
+            tcp_flags
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+    """, spaced_syn_packets)
+
+    connection.commit()
+    connection.close()
+
+    monkeypatch.setattr(
+        detector,
+        "connect_database",
+        lambda: sqlite3.connect(db_path)
+    )
+
+    result = detector.detect_excessive_syn(
+        threshold=3,
+        window_seconds=10
+    )
+
+    assert not any(
+        source_ip == "10.0.0.200"
+        and destination_ip == "10.0.0.201"
+        for source_ip, destination_ip, syn_count in result
+    )

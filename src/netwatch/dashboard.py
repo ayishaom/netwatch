@@ -110,6 +110,13 @@ excessive_syn_threshold = st.sidebar.number_input(
     step=1
     )
 
+syn_window_seconds = st.sidebar.number_input(
+    "SYN Detection Window (seconds)",
+    min_value=1,
+    value=10,
+    step=1,
+)
+
 port_scan_results = detect_port_scan(port_scan_threshold)
 
 
@@ -119,7 +126,10 @@ host_sweep_results = detect_host_sweep(host_sweep_threshold)
 high_volume_results = detect_high_volume_flow(high_volume_threshold_bytes)
 
 
-excessive_syn_results = detect_excessive_syn(excessive_syn_threshold)
+excessive_syn_results = detect_excessive_syn(
+    excessive_syn_threshold,
+    syn_window_seconds,
+    )
 
 alerts = generate_alerts(
     port_scan_results,
