@@ -121,9 +121,4 @@ def detect_excessive_syn(threshold, window_seconds=10):
     return results
 
 
-if __name__ == "__main__":
-    results = detect_port_scan(10)
-
-    for result in results:
-        print(result)
 
