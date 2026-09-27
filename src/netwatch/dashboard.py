@@ -1,4 +1,9 @@
+import os
+import tempfile
+
 import streamlit as st
+
+from netwatch.collector import import_capture
 
 from netwatch.analyzer import (
     get_traffic_summary,
@@ -111,6 +116,64 @@ high_volume_threshold_bytes = (
     high_volume_threshold_mb * 1024 * 1024
 )
 
+# ---------------------------------------------------------
+# Capture Upload
+# ---------------------------------------------------------
+
+st.subheader("Analyze Network Capture")
+
+st.caption(
+    "Upload a PCAP or PCAPNG capture to replace the currently analyzed dataset."
+)
+
+if "import_message" not in st.session_state:
+    st.session_state.import_message = None
+
+if st.session_state.import_message:
+    st.success(st.session_state.import_message)
+    st.session_state.import_message = None
+
+uploaded_file = st.file_uploader(
+    "Network capture",
+    type=["pcap", "pcapng"],
+    help="Upload a .pcap or .pcapng file captured with Wireshark or another packet capture tool.",
+)
+
+if uploaded_file is not None:
+    if st.button("Analyze Capture", type="primary"):
+        suffix = os.path.splitext(uploaded_file.name)[1]
+
+        temp_path = None
+
+        try:
+            with tempfile.NamedTemporaryFile(
+                delete=False,
+                suffix=suffix,
+            ) as temp_file:
+                temp_file.write(uploaded_file.getbuffer())
+                temp_path = temp_file.name
+
+            with st.spinner("Analyzing network capture..."):
+                success = import_capture(temp_path)
+
+            if success:
+                st.session_state.import_message = (
+                    f"Successfully analyzed {uploaded_file.name}."
+                )
+                st.rerun()
+            else:
+                st.error(
+                    "The capture could not be analyzed. "
+                    "The previous dataset was preserved."
+                )
+
+        finally:
+            if temp_path and os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except PermissionError:
+                    pass
+
 
 # ---------------------------------------------------------
 # Traffic Overview
@@ -218,7 +281,7 @@ for flow in network_flows:
 
 st.dataframe(
     flow_data,
-    use_container_width=True,
+    width="stretch",
     hide_index=True,
 )
 
