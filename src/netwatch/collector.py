@@ -32,15 +32,20 @@ def main():
     if packets is None:
         return
     create_table()
-    clear_observations()
     connection = connect_database()
-    for packet in packets:
-        parsed = parse_packets(packet)
-        if parsed is not None:
-            save_observation(connection, *parsed)
-    connection.commit()
+    try:
+        clear_observations(connection)
+        for packet in packets:
+            parsed = parse_packets(packet)
+            if parsed is not None:
+                save_observation(connection, *parsed)
+        connection.commit()
 
-    connection.close()
+    except Exception as e:
+        connection.rollback()
+        print(f"Error importing packets: {e}") 
+    finally:
+        connection.close()
 
 
 if __name__ == "__main__":

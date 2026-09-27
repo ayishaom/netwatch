@@ -39,7 +39,7 @@ def test_clear_observations(tmp_path, monkeypatch):
 
     assert count == 1
 
-    storage.clear_observations()
+    storage.clear_observations(connection)
 
     cursor.execute(""" 
         SELECT COUNT(*)
