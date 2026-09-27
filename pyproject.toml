@@ -12,5 +12,10 @@ dependencies = [
     "streamlit",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+
 [tool.setuptools.packages.find]
 where = ["src"]
