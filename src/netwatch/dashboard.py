@@ -81,17 +81,45 @@ st.dataframe(flow_data)
 
 
 st.subheader("Security Alerts")
+port_scan_threshold = st.sidebar.number_input(
+    "Port Scan Threshold",
+    min_value=1 ,
+    value=10 ,
+    step=1
+    )
+host_sweep_threshold = st.sidebar.number_input(
+    "Host Sweep Threshold",
+    min_value=1 ,
+    value=10 ,
+    step=1
+    )
 
-port_scan_results = detect_port_scan(10)
+high_volume_threshold_mb = st.sidebar.number_input(
+    "High Volume Threshold (MB)",
+    min_value=0.1 ,
+    value=1.0 ,
+    step=0.1
+    )
+
+high_volume_threshold_bytes = high_volume_threshold_mb * 1024 * 1024
+
+excessive_syn_threshold = st.sidebar.number_input(
+    "Excessive SYN Threshold",
+    min_value=1 ,
+    value=50 ,
+    step=1
+    )
+
+port_scan_results = detect_port_scan(port_scan_threshold)
 
 
-host_sweep_results = detect_host_sweep(10)
+host_sweep_results = detect_host_sweep(host_sweep_threshold)
 
 
-high_volume_results = detect_high_volume_flow(1_000_000)
+high_volume_results = detect_high_volume_flow(high_volume_threshold_bytes)
 
 
-excessive_syn_results = detect_excessive_syn(50)
+excessive_syn_results = detect_excessive_syn(excessive_syn_threshold)
 
 alerts = generate_alerts(
     port_scan_results,
