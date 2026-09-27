@@ -99,7 +99,7 @@ def get_traffic_summary():
     cursor.execute("""
         SELECT
             COUNT(*) AS packet_count,
-            SUM(packet_size) AS total_bytes,
+            COALESCE(SUM(packet_size), 0) AS total_bytes,
             COUNT(DISTINCT source_ip) AS unique_sources,
             COUNT(DISTINCT destination_ip) AS unique_destinations
         FROM network_observations;

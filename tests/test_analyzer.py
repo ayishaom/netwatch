@@ -63,6 +63,41 @@ def test_traffic_summary(tmp_path, monkeypatch):
 
     assert result == (4, 500, 3, 2)
 
+
+def test_traffic_summary_empty_database(tmp_path, monkeypatch):
+    db_path = tmp_path / "test_empty_netwatch.db"
+
+    connection = sqlite3.connect(db_path)
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        CREATE TABLE network_observations (
+            id INTEGER PRIMARY KEY,
+            timestamp REAL,
+            source_ip TEXT,
+            destination_ip TEXT,
+            protocol TEXT,
+            source_port INTEGER,
+            destination_port INTEGER,
+            packet_size INTEGER,
+            tcp_flags TEXT
+        );
+    """)
+
+    connection.commit()
+    connection.close()
+
+    monkeypatch.setattr(
+        analyzer,
+        "connect_database",
+        lambda: sqlite3.connect(db_path)
+    )
+
+    result = analyzer.get_traffic_summary()
+
+    assert result == (0, 0, 0, 0)
+
+
 def test_flow_count(tmp_path, monkeypatch):
     db_path = create_test_database(tmp_path)
 
