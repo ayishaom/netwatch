@@ -63,15 +63,11 @@ def save_observation(
 
 
 def clear_observations(connection):
-    connection = connect_database()
     cursor = connection.cursor()
 
     cursor.execute("""
         DELETE FROM network_observations; 
      """)
-
-    connection.commit()
-    connection.close()
 
 
 
